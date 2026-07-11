@@ -1,0 +1,5 @@
+# pillbar keeps no state in the repo; its runtime cache lives under
+# ${TMUX_TMPDIR:-/tmp}/pillbar-$(id -u)/ and is never committed.
+*.swp
+*.tmp
+.DS_Store
