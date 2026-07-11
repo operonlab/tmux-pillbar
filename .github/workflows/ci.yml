@@ -1,0 +1,60 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  shellcheck:
+    name: shellcheck (-S warning)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install shellcheck
+        run: sudo apt-get update && sudo apt-get install -y shellcheck
+      - name: Lint all shell scripts
+        # examples/nowplaying-demo.sh is macOS-only at RUNTIME, but it is still
+        # statically linted here on Linux — shellcheck does not execute it.
+        run: |
+          shellcheck -S warning \
+            pillbar.tmux \
+            scripts/helpers.sh \
+            scripts/pill.sh \
+            scripts/teardown.sh \
+            examples/nowplaying-demo.sh \
+            tests/smoke.sh
+
+  smoke:
+    name: smoke (${{ matrix.os }})
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install tmux (Linux)
+        if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install -y tmux
+      - name: Install tmux (macOS)
+        if: runner.os == 'macOS'
+        run: brew install tmux
+      - name: Assert tmux >= 2.9 (status-format[] array + status 2 landed in 2.9)
+        run: |
+          ver="$(tmux -V | awk '{print $2}')"
+          case "$ver" in
+            master|next-*) echo "tmux $ver: dev build, assumed >= 2.9"; exit 0 ;;
+          esac
+          num="${ver%[a-z]}"          # 2.9a -> 2.9
+          maj="${num%%.*}"
+          min="${num#*.}"; min="${min%%.*}"
+          if [ "$maj" -lt 2 ] || { [ "$maj" -eq 2 ] && [ "$min" -lt 9 ]; }; then
+            echo "tmux $ver is below the required 2.9"; exit 1
+          fi
+          echo "tmux $ver satisfies >= 2.9"
+      - name: Headless smoke tests
+        # Structure-only checks on a throwaway -L socket; the real tmux server
+        # is never touched. On-screen alignment / Nerd Font rendering genuinely
+        # need an attached client and are reported as SKIP by the harness.
+        run: bash tests/smoke.sh
