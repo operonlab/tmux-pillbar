@@ -9,15 +9,21 @@
 set -u
 
 CURRENT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-# shellcheck source=scripts/helpers.sh
-. "${CURRENT_DIR}/scripts/helpers.sh"
+# shellcheck source=helpers.sh
+. "${CURRENT_DIR}/helpers.sh"
 
 # What was `status` before pillbar touched it? Fall back to tmux's default `on`
 # if we somehow never recorded it.
 saved="$(tmux show-option -gqv @pillbar-saved-status)"
 [ -z "$saved" ] && saved="on"
 
-# Clear OUR second-row format (revert the array element to the tmux default).
+# Clear OUR second-row format. NOTE: `-u` on an array index leaves the element
+# EMPTY, not the tmux compiled default — tmux never restores the built-in value
+# for an indexed option once it has been set. Harmless here: status drops back to
+# one row so status-format[1] is no longer rendered. Caveat: we only ever saved
+# the `status` height, not the original status-format[1] content, so a user who
+# had hand-customised a multi-row format before installing pillbar gets an empty
+# row back on teardown rather than their prior custom value.
 tmux set-option -gu 'status-format[1]' 2>/dev/null
 
 # Put the status height back the way we found it.
