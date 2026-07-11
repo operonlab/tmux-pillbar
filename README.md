@@ -130,7 +130,7 @@ you use ordinary tmux syntax:
 Examples:
 
 ```tmux
-set -g @pillbar-left   '#(~/.tmux/plugins/tmux-llm-usage/scripts/render.sh)'
+set -g @pillbar-left   '#(~/.tmux/plugins/tmux-llm-usage/scripts/usage.sh)'
 set -g @pillbar-center '#{pane_current_path}'
 set -g @pillbar-right  '#(uptime | sed "s/.*load/load/")'
 ```
@@ -198,15 +198,29 @@ this pattern (and a good template for your own providers).
 `examples/family.conf` wires three complementary providers into the three slots:
 
 ```tmux
-set -g @pillbar-left   '#(~/.tmux/plugins/tmux-llm-usage/scripts/render.sh)'   # left
+set -g @pillbar-left   '#(~/.tmux/plugins/tmux-llm-usage/scripts/usage.sh)'    # left  (llm-usage reader)
 set -g @pillbar-center '#(~/.tmux/plugins/tmux-pillbar/examples/nowplaying-demo.sh)'  # centre (macOS-only demo)
-set -g @pillbar-right  '#(~/.tmux/plugins/tmux-sysmon/scripts/row.sh)'         # right
+# right — sysmon has no single "row" script; each field is its own reader call:
+set -g @pillbar-right  '#(~/.tmux/plugins/tmux-sysmon/scripts/sysmon.sh net)#(~/.tmux/plugins/tmux-sysmon/scripts/sysmon.sh cpu)#(~/.tmux/plugins/tmux-sysmon/scripts/sysmon.sh mem)#(~/.tmux/plugins/tmux-sysmon/scripts/sysmon.sh disk)'
 set -g @pillbar-pill-style ascii
 ```
 
 Copy the file, point the paths at whatever providers you actually have, and
 reload. Each provider reads its own cache and never blocks — see the file's
-comments.
+comments. Two things to know about wiring these particular siblings in:
+
+- **Call the reader scripts directly, not the `#{...}` tokens.** `tmux-sysmon`
+  and `tmux-llm-usage` advertise `#{sysmon_cpu}` / `#{llm_usage}`-style tokens,
+  but each plugin only rewrites those inside `status-left` / `status-right` —
+  pillbar's second row (`status-format[1]`) is never touched, so a token dropped
+  into a slot stays a literal and shows nothing. Point the slot at the underlying
+  reader instead: `usage.sh`, and `sysmon.sh <field>`.
+- **sysmon prints one field per call, and its cache must be warm.** There is no
+  single "row" script; `sysmon.sh` takes `net` / `cpu` / `mem` / `disk` and emits
+  just that field, so the right slot chains four calls. It returns the cached
+  value — which is empty until the `tmux-sysmon` plugin has loaded and run one
+  background refresh, so load that plugin too. The right slot is blank on the
+  very first render and fills in a moment later.
 
 ---
 
