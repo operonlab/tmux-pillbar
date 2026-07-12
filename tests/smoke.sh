@@ -22,14 +22,18 @@ FAILS=0
 cleanup() {
 	for s in $SOCKETS; do
 		tmux -L "$s" kill-server 2>/dev/null || true
+		rm -f "${TMUX_TMPDIR:-/tmp}/tmux-$(id -u)/$s" 2>/dev/null || true
 	done
 }
-trap cleanup EXIT
+trap cleanup EXIT INT TERM
 
+# new_sock <letter> — allocate a socket name into $SOCK and register it for
+# cleanup. Must be called plainly, never as `$(new_sock …)`: command
+# substitution runs the body in a subshell, the SOCKETS registration dies
+# there, and cleanup silently becomes a no-op that leaks every test server.
 new_sock() {
-	s="pillbartest$$_$1"
-	SOCKETS="$SOCKETS $s"
-	printf '%s' "$s"
+	SOCK="pillbartest$$_$1"
+	SOCKETS="$SOCKETS $SOCK"
 }
 
 check() {
@@ -72,7 +76,7 @@ done
 
 # ══ Scenario A: full three-slot assembly ═════════════════════════════════════
 echo "── Scenario A: three configured slots → static align tags + #() content, status 2"
-A=$(new_sock A)
+new_sock A; A=$SOCK
 tmux -L "$A" -f /dev/null new-session -d -s main -x 200 -y 50
 orig_status=$(tmux -L "$A" show-option -gqv status)
 tmux -L "$A" set-option -g @pillbar-left  '#(echo L)'
@@ -92,7 +96,7 @@ check "original status recorded" "$orig_status" "$(tmux -L "$A" show-option -gqv
 
 # ══ Scenario B: absolute-centre opt-in ═══════════════════════════════════════
 echo "── Scenario B: @pillbar-center-align absolute-centre is honoured (opt-in)"
-B=$(new_sock B)
+new_sock B; B=$SOCK
 tmux -L "$B" -f /dev/null new-session -d -s main -x 200 -y 50
 tmux -L "$B" set-option -g @pillbar-center '#(echo C)'
 tmux -L "$B" set-option -g @pillbar-center-align absolute-centre
@@ -110,7 +114,7 @@ not_contains "bogus align value not passed through" "$fmtB2" "align=wat"
 
 # ══ Scenario C: empty slot is skipped ════════════════════════════════════════
 echo "── Scenario C: empty @pillbar-center → centre slot skipped, left+right remain"
-C=$(new_sock C)
+new_sock C; C=$SOCK
 tmux -L "$C" -f /dev/null new-session -d -s main -x 200 -y 50
 tmux -L "$C" set-option -g @pillbar-left  '#(echo L)'
 tmux -L "$C" set-option -g @pillbar-right  '#(echo R)'
@@ -122,7 +126,7 @@ not_contains "empty center slot skipped" "$fmtC" "#[align=centre]"
 
 # ══ Scenario D: reload does not clobber the saved original status ═════════════
 echo "── Scenario D: a second run (reload) keeps the true original status"
-D=$(new_sock D)
+new_sock D; D=$SOCK
 tmux -L "$D" -f /dev/null new-session -d -s main -x 200 -y 50
 tmux -L "$D" set-option -g status on
 tmux -L "$D" set-option -g @pillbar-left '#(echo L)'
