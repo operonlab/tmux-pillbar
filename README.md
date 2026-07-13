@@ -6,6 +6,10 @@
 "capsule" style.** It opens a second line under your normal status bar and lets
 you drop any command or tmux variable into three slots. That's it.
 
+![Three colour-coded slots (@pillbar-left / -center / -right) rendered as a second tmux status row of rounded nerd-font capsules: a blue CPU capsule on the left, a magenta now-playing capsule in the centre, a green clock capsule on the right.](docs/screenshot.png)
+
+*Three slots — `left` · `centre` · `right` — become three capsules on a second status row. You bring the content and the colours; pillbar just lays out the row.*
+
 `tmux-pillbar` is a **framework, not a theme.** It ships **no colour palette**
 and **no content** — you bring the colours and the commands. It pairs naturally
 with content providers like `tmux-sysmon`, `tmux-agent-status` and

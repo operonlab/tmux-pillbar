@@ -5,6 +5,10 @@
 **在 tmux 狀態列下面再開一列，分成左／中／右三個槽，用「膠囊」樣式呈現的組裝框架。**
 你把任意指令或 tmux 變數塞進三個槽，其餘的排版由它處理。
 
+![三個顏色對應的槽（@pillbar-left／-center／-right）在 tmux 第二列狀態列渲染成圓角 nerd-font 膠囊：左邊藍色 CPU 膠囊、中間洋紅色正在播放膠囊、右邊綠色時鐘膠囊。](screenshot.png)
+
+*三個槽——`left`·`centre`·`right`——變成第二列狀態列上的三顆膠囊。內容和顏色由你決定，pillbar 只負責把這一列排好。*
+
 pillbar 是**框架，不是主題**。它**不內建任何配色**、**不內建任何內容**——顏色和指令都由你決定。
 它天生和 `tmux-sysmon`、`tmux-agent-status`、`tmux-llm-usage` 這類內容提供者互補（下面有三件套範例）。
 
