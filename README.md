@@ -104,7 +104,7 @@ TPM download it. The second row appears.
 
 ## 3. Demo
 
-*Demo GIF coming soon.*
+![tmux-pillbar demo — loading the plugin slides in a second status row with left, centre and right capsule slots](docs/demo.gif)
 
 ---
 
