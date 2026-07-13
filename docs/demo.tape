@@ -1,40 +1,51 @@
-# tmux-pillbar demo — a framework for a second status row with left / centre /
-# right "capsule" slots. Load it and the second row slides in; you bring the
-# content and the colours.
-#
-# Recorded against an isolated tmux server (socket: vhsdemo-pillbar,
-# -f /dev/null), never the user's live server. The three capsules are rendered
-# by the bundled pill.sh from stand-in providers.
-Output docs/demo.gif
+# tmux-pillbar demo — a framework for a SECOND status row of left / center /
+# right capsules. Fully self-contained: docs/demo-setup.sh stages an anonymous
+# shell and a catppuccin-mocha ISOLATED tmux server (socket pb-demo) that starts
+# at a SINGLE status row. The theme deliberately leaves status-format[1] unset —
+# so when the plugin is loaded on camera, the capsule row it assembles from the
+# three @pillbar-* demo slots (each piped through the bundled scripts/pill.sh)
+# slides in beneath the status bar. The theme owns status-left AND status-right
+# (the default status-right leaks the hostname); row 2 is drawn only by pillbar.
+# Re-record from the repo root with:  vhs docs/demo.tape
+Output "docs/demo.gif"
 Require tmux
 
 Set Shell "bash"
-Set Width 1200
-Set Height 600
-Set FontSize 15
-Set Padding 12
-Set TypingSpeed 55ms
+Set FontFamily "MesloLGS Nerd Font Mono"
+Set FontSize 20
+Set Width 1600
+Set Height 520
+Set Padding 20
+Set TypingSpeed 35ms
 
-# ---- hidden setup: isolated server, slot options (plugin loaded on camera) ----
 Hide
-Type "bash /private/tmp/claude-501/-Users-joneshong/aaff1254-ec36-4c2f-98bf-76d62cc8b483/scratchpad/vhs-visual/setup-pillbar.sh"
+Type "bash docs/demo-setup.sh"
 Enter
-Sleep 1s
-Type "clear; tmux -L vhsdemo-pillbar attach -t demo"
+Sleep 3s
+Type "clear; tmux -L pb-demo attach -t demo"
 Enter
-Sleep 1500ms
+Sleep 2s
 Show
 
-# ---- visible demo ----
-Sleep 2s
-
-# load the plugin -> the second capsule row appears under the normal status bar
-Type "tmux run-shell /Users/joneshong/work/tmux-plugins/tmux-pillbar/pillbar.tmux"
+# one status row to start: cockpit session capsule (left) + clock capsule (right)
+Sleep 2500ms
+Type "# tmux-pillbar: add a SECOND status row of capsules — left / center / right"
 Enter
-Sleep 4s
+Sleep 2500ms
 
-# ---- hidden teardown ----
+# load the plugin -> the capsule row slides in beneath the status bar
+Type `tmux run-shell "$pb"`
+Enter
+Sleep 4500ms
+
+Type "# the row is yours: each slot is any command; here they feed the bundled pill.sh"
+Enter
+Sleep 3500ms
+
 Hide
-Type "tmux -L vhsdemo-pillbar kill-server"
+Ctrl+B
+Type "d"
+Sleep 400ms
+Type "tmux -L pb-demo kill-server"
 Enter
 Sleep 500ms
