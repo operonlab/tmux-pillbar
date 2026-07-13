@@ -39,7 +39,7 @@ pillbar 負責把每個槽固定在左／中／右，並在文字外面加上（
 
 ```sh
 # 1. 把外掛下載到固定位置
-git clone https://github.com/joneshong/tmux-pillbar ~/.tmux/plugins/tmux-pillbar
+git clone https://github.com/operonlab/tmux-pillbar ~/.tmux/plugins/tmux-pillbar
 
 # 2. 叫 tmux 載入它，並給中槽放個時鐘
 cat >> ~/.tmux.conf <<'CONF'
@@ -65,7 +65,7 @@ git clone https://github.com/tmux-plugins/tpm ~/.tmux/plugins/tpm
 然後在那行**上面**加：
 
 ```tmux
-set -g @plugin 'joneshong/tmux-pillbar'
+set -g @plugin 'operonlab/tmux-pillbar'
 set -g @pillbar-center '#(date +%H:%M)'
 ```
 

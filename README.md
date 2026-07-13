@@ -61,7 +61,7 @@ Copy-paste these three steps:
 
 ```sh
 # 1. Download the plugin somewhere permanent
-git clone https://github.com/joneshong/tmux-pillbar ~/.tmux/plugins/tmux-pillbar
+git clone https://github.com/operonlab/tmux-pillbar ~/.tmux/plugins/tmux-pillbar
 
 # 2. Tell tmux to load it, and give the centre slot something to show
 cat >> ~/.tmux.conf <<'CONF'
@@ -93,7 +93,7 @@ run '~/.tmux/plugins/tpm/tpm'
 line:
 
 ```tmux
-set -g @plugin 'joneshong/tmux-pillbar'
+set -g @plugin 'operonlab/tmux-pillbar'
 set -g @pillbar-center '#(date +%H:%M)'
 ```
 
@@ -268,7 +268,7 @@ bash ~/.tmux/plugins/tmux-pillbar/scripts/teardown.sh
 ```
 
 Then delete the plugin line from `~/.tmux.conf` (the
-`run-shell ...pillbar.tmux` line, or the `set -g @plugin 'joneshong/tmux-pillbar'`
+`run-shell ...pillbar.tmux` line, or the `set -g @plugin 'operonlab/tmux-pillbar'`
 line) and reload with `prefix` `r`. Teardown restores the exact `status` value
 pillbar saved when it first loaded, and leaves your own `@pillbar-*` lines alone
 (remove them by hand if you added any).
