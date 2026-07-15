@@ -342,7 +342,7 @@ script prints these as `SKIP`.
 
 ## 10. Credits / License
 
-Built by [joneshong](https://github.com/joneshong). Released under the
+Built by [operonlab](https://github.com/operonlab). Released under the
 **MIT License** — see [LICENSE](LICENSE).
 
 Complementary content providers (bring your own colours):

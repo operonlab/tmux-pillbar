@@ -206,4 +206,4 @@ bash ~/.tmux/plugins/tmux-pillbar/scripts/teardown.sh
 
 ## 8. 授權
 
-由 [joneshong](https://github.com/joneshong) 製作，採 **MIT License**（見 [LICENSE](../LICENSE)）。
+由 [operonlab](https://github.com/operonlab) 製作，採 **MIT License**（見 [LICENSE](../LICENSE)）。
