@@ -4,6 +4,24 @@ All notable changes to tmux-pillbar are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/), and the project aims to follow
 [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+
+### Added
+- `scripts/pill.sh` now also reads a **semantic** line form
+  `icon|label|value|state|health` alongside the original
+  `icon|label|value|fg|bg`. A line is semantic only when its 5th field is a
+  known health token (`ok` / `warning` / `error`); every other line keeps the
+  explicit-colour path and renders byte-identically. `state`, when non-empty,
+  renders as trailing text.
+- `@pillbar-health-ok-style`, `@pillbar-health-warning-style` and
+  `@pillbar-health-error-style` — an overridable `fg bg` style map for the
+  semantic form. All default to `default default` (no colour), keeping pillbar
+  palette-free: you opt into colour by setting them.
+- `evaluate_threshold_health <value> <warn> <crit> [invert]` helper: maps a
+  numeric reading to `ok` / `warning` / `error` (supports an inverted,
+  lower-is-worse scale). A non-numeric reading returns `error` (fail loud),
+  never a silent `ok`.
+
 ## [0.1.0] - 2026-07-11
 
 Initial release.

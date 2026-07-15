@@ -173,6 +173,44 @@ Empty fields are dropped; `fg`/`bg` default to your terminal's own colours when
 omitted. The look is controlled by `@pillbar-pill-style` (see Options).
 `examples/nowplaying-demo.sh` is a complete provider that uses `pill.sh`.
 
+#### Colour by health, not by hex
+
+Hardcoding `colour24` in every provider gets old. `pill.sh` also reads a second
+line form where the last two fields are a **state** and a **health** token
+instead of `fg|bg`:
+
+```
+icon|label|value|state|health      # health ∈ ok | warning | error
+```
+
+A line is treated as this form only when its 5th field is exactly `ok`,
+`warning`, or `error`; anything else is still the plain `fg|bg` form. The colour
+comes from an overridable **style map**, so a provider says *what it means* and
+you decide *how it looks*:
+
+```tmux
+set -g @pillbar-health-ok-style      'colour15 colour22'   # fg bg
+set -g @pillbar-health-warning-style 'colour232 colour214'
+set -g @pillbar-health-error-style   'colour231 colour160'
+```
+
+Each option is a `fg bg` pair. **They default to `default default` (no colour)**
+— pillbar ships no palette, so an unset health renders in your terminal's own
+colours and you opt into colour by setting these. The `state` field, when
+non-empty, renders as trailing text after the value.
+
+The `evaluate_threshold_health` helper (in `scripts/helpers.sh`) turns a number
+into that token for you: `evaluate_threshold_health <value> <warn> <crit>
+[invert]` echoes `ok` / `warning` / `error`. It fails **loud** — a non-numeric
+reading is `error`, never a silent `ok`. Pass a non-empty 4th argument for an
+inverted (lower-is-worse) scale like free disk or battery:
+
+```sh
+. "$(dirname "$0")/../scripts/helpers.sh"          # source, don't execute
+h="$(evaluate_threshold_health "$cpu" 80 95)"      # ok | warning | error
+printf '%s\n' "|CPU|${cpu}%||${h}" | "$(dirname "$0")/../scripts/pill.sh"
+```
+
 ### A note on `%` (percent signs)
 
 tmux reads the text **inside** a `#( ... )` as a format string *before* running
@@ -242,6 +280,9 @@ change something.
 | `@pillbar-center-align` | `centre` | How the centre slot is centred. `centre` centres it in the space *left over* between the side slots (works everywhere). `absolute-centre` centres it against the *full* width — see the note below. |
 | `@pillbar-bg` | `default` | Background colour of the whole second row (the gaps between capsules). `default` = your terminal's own background. |
 | `@pillbar-pill-style` | `ascii` | Capsule look used by `pill.sh`: `ascii` = `[ ... ]` brackets (any font); `nerd` = rounded half-circle end-caps (needs a Nerd Font); `none` = bare coloured text, no delimiters. |
+| `@pillbar-health-ok-style` | `default default` | `fg bg` colour pair for a capsule whose `health` field is `ok`. Default = no colour (your terminal's own). Used only by the `icon\|label\|value\|state\|health` line form. |
+| `@pillbar-health-warning-style` | `default default` | `fg bg` colour pair for a `warning` health. Default = no colour. |
+| `@pillbar-health-error-style` | `default default` | `fg bg` colour pair for an `error` health. Default = no colour. |
 
 ### A note on `absolute-centre`
 
