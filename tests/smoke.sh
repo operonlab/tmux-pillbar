@@ -165,6 +165,61 @@ fi
 empty_out=$(printf '' | bash "$PILL" ascii default)
 check "empty stdin → empty output" "" "$empty_out"
 
+# ══ Scenario G: semantic state|health record form + health helpers ═══════════
+# shellcheck source=../scripts/helpers.sh
+. "${REPO_DIR}/scripts/helpers.sh"
+
+echo "── Scenario G1: evaluate_threshold_health (higher-is-worse, warn=80 crit=95)"
+check "below warn → ok"              "ok"      "$(evaluate_threshold_health 70 80 95)"
+check "== warn (boundary) → warning" "warning" "$(evaluate_threshold_health 80 80 95)"
+check "between warn/crit → warning"  "warning" "$(evaluate_threshold_health 90 80 95)"
+check "== crit (boundary) → error"   "error"   "$(evaluate_threshold_health 95 80 95)"
+check "above crit → error"           "error"   "$(evaluate_threshold_health 99 80 95)"
+check "decimal below warn → ok"      "ok"      "$(evaluate_threshold_health 42.5 80 95)"
+
+echo "── Scenario G1b: evaluate_threshold_health fails LOUD on non-numeric"
+check "letters → error (not silent ok)" "error" "$(evaluate_threshold_health abc 80 95)"
+check "empty → error (not silent ok)"   "error" "$(evaluate_threshold_health '' 80 95)"
+check "trailing percent → error"        "error" "$(evaluate_threshold_health 42% 80 95)"
+
+echo "── Scenario G1c: evaluate_threshold_health inverted (lower-is-worse, warn=30 crit=15)"
+check "above warn → ok"              "ok"      "$(evaluate_threshold_health 40 30 15 1)"
+check "== warn (boundary) → warning" "warning" "$(evaluate_threshold_health 30 30 15 1)"
+check "== crit (boundary) → error"   "error"   "$(evaluate_threshold_health 15 30 15 1)"
+check "below crit → error"           "error"   "$(evaluate_threshold_health 5 30 15 1)"
+
+echo "── Scenario G2: explicit fg|bg form renders byte-identically (unchanged)"
+legacy=$(printf '%s\n' 'CPU||42%|colour15|colour24' | bash "$PILL" ascii default)
+check "explicit fg|bg exact bytes unchanged" \
+	"#[fg=colour15,bg=colour24][ CPU 42% ]#[default]" "$legacy"
+
+echo "── Scenario G3: semantic state|health → colour from @pillbar-health-*-style"
+new_sock G; G=$SOCK
+tmux -L "$G" -f /dev/null new-session -d -s main -x 200 -y 50
+tmux -L "$G" set-option -g @pillbar-health-error-style 'colour231 colour160'
+# @pillbar-health-ok-style is left UNSET → it must default to NO colour.
+TF="${TMUX_TMPDIR:-/tmp}/pillbar-htest-$$"
+
+# error → configured colours; state field renders; value passes through
+tmux -L "$G" run-shell "printf '%s\\n' 'DISK||95%|full|error' | '${PILL}' ascii default > '${TF}'"
+err_render=$(cat "$TF" 2>/dev/null)
+contains "error health → configured fg/bg" "$err_render" "#[fg=colour231,bg=colour160]"
+contains "semantic pill carries the value" "$err_render" "95%"
+contains "state field renders as trailing text" "$err_render" "full"
+
+# ok is UNSET → default default = no colour (honours 'bring your own colours')
+tmux -L "$G" run-shell "printf '%s\\n' 'NET||idle|nominal|ok' | '${PILL}' ascii default > '${TF}'"
+ok_render=$(cat "$TF" 2>/dev/null)
+contains "unset ok health → no colour (default default)" "$ok_render" "#[fg=default,bg=default]"
+not_contains "unset ok health emits no palette colour" "$ok_render" "colour"
+
+# warning → its own configured colours
+tmux -L "$G" set-option -g @pillbar-health-warning-style 'colour232 colour214'
+tmux -L "$G" run-shell "printf '%s\\n' 'CPU||88%|busy|warning' | '${PILL}' ascii default > '${TF}'"
+warn_render=$(cat "$TF" 2>/dev/null)
+contains "warning health → configured fg/bg" "$warn_render" "#[fg=colour232,bg=colour214]"
+rm -f "$TF"
+
 # ── SKIP: things that genuinely need an attached client ──────────────────────
 echo "── SKIP (needs an attached client; verify by eye):"
 echo "  SKIP: on-screen pixel alignment of the three slots"

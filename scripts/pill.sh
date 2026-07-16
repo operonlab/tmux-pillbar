@@ -1,14 +1,22 @@
 #!/usr/bin/env bash
 # pill.sh — render "capsules" for a tmux-pillbar slot.
 #
-# Reads pipe-delimited lines from stdin, one capsule per line:
+# Reads pipe-delimited lines from stdin, one capsule per line, in EITHER form:
 #
-#     icon|label|value|fg|bg
+#     icon|label|value|fg|bg          <- explicit colours (original)
+#     icon|label|value|state|health   <- semantics; colour resolved from health
 #
 # and writes a single tmux-format string of styled capsules to stdout. Empty
 # fields are dropped from the capsule text; a fully blank line is skipped. fg/bg
 # default to `default` (the terminal's own colours) when omitted — this is a
 # framework, it does not ship a palette, you bring your own colours.
+#
+# A line is read as the SEMANTIC form when its 5th field is a known health token
+# (ok | warning | error); otherwise it is the explicit colour form and renders
+# byte-identically to before. In the semantic form the colour comes from the
+# @pillbar-health-<health>-style option (default `default default` = no colour,
+# so you opt into colour by setting it), and `state` — when non-empty — renders
+# as trailing text so no provided field is silently dropped.
 #
 # HARD RULE: pill.sh output NEVER contains an `#[align=...]` tag. Alignment is
 # owned by pillbar.tmux and written statically into the format. An align tag
@@ -64,11 +72,31 @@ NERD_L=$'\356\202\266'
 NERD_R=$'\356\202\264'
 
 out=""
-while IFS='|' read -r icon label value fg bg; do
+while IFS='|' read -r icon label value f4 f5; do
 	# Skip a line with no visible content at all.
 	[ -z "${icon}${label}${value}" ] && continue
-	fg="${fg:-default}"
-	bg="${bg:-default}"
+
+	# Pick the record form from the 5th field. A known health token selects the
+	# SEMANTIC form (state|health); anything else is the explicit fg|bg form and
+	# renders byte-identically to before.
+	state=""
+	case "$f5" in
+		ok|warning|error)
+			# Colour comes from the health style map, never the record itself. If
+			# helpers failed to load, fall back to no colour, not a stale value.
+			hstyle="default default"
+			command -v resolve_health_style >/dev/null 2>&1 && \
+				hstyle="$(resolve_health_style "$f5")"
+			read -r fg bg _ <<< "$hstyle"
+			fg="${fg:-default}"
+			bg="${bg:-default}"
+			state="$f4"
+			;;
+		*)
+			fg="${f4:-default}"
+			bg="${f5:-default}"
+			;;
+	esac
 
 	# Join the non-empty fields with single spaces. Values are emitted verbatim:
 	# tmux does NOT re-expand the OUTPUT of a `#(...)`, so a literal `%` (e.g.
@@ -78,6 +106,7 @@ while IFS='|' read -r icon label value fg bg; do
 	[ -n "$icon" ]  && inner="$icon"
 	[ -n "$label" ] && inner="${inner:+$inner }$label"
 	[ -n "$value" ] && inner="${inner:+$inner }$value"
+	[ -n "$state" ] && inner="${inner:+$inner }$state"
 
 	case "$style" in
 		nerd)
